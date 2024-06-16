@@ -52,7 +52,8 @@ def handle_redaction_event(text):
     # Instantiate and use the PresidioTextRedactor class
     redactor = PresidioTextRedactor(text)
     text_redacted = redactor.redact()
-    stiched_text = redactor.stitch()
+    print("text redacted", text_redacted)
+    stiched_text = ""
     return text_redacted, stiched_text
     
 
