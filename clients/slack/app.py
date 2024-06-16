@@ -1,15 +1,13 @@
 import os
 import sys
 import logging
+import requests
+
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt.adapter.flask import SlackRequestHandler
 from flask import Flask, request, jsonify
 from dotenv import dotenv_values
-
-# Add the parent directory of ml_services to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../backend')))
-from ml_services.presidio_redactor import PresidioTextRedactor
 
 #----------------INIT TOKENS------------------------#
 config = dotenv_values(".env")  # config = {"SLACK_BOT_TOKEN": "foo", "SLACK_SIGNING_SECRET": "fi"}
@@ -19,6 +17,7 @@ if not config["SLACK_BOT_TOKEN"] or not config["SLACK_SIGNING_SECRET"]:
 #--------------INIT MODULES-----------#
 # Install the Slack app and get xoxb- token in advance
 app = App(token=config["SLACK_BOT_TOKEN"], signing_secret=config["SLACK_SIGNING_SECRET"])
+REDACTOR_URL = "http://localhost:3001/"
 
 # Flask web server for the Slack events
 flask_app = Flask(__name__)
@@ -31,12 +30,13 @@ logging.basicConfig(level=logging.DEBUG)
 def handle_message_events(event, say):
     logging.debug(f"Event received: {event}")
     user = event.get('user')
+    client_msg_id = event.get('client_msg_id')
     text = event.get('text')
     channel = event.get('channel')
-    print(f"Message from {user} in channel {channel}: {text}")
-    text_redacted, stiched_text = handle_redaction_event(text)
+    #print(f"Message from {user} in channel {channel}: {text}")
+    text_redacted, stiched_text = handle_redaction_event(channel, client_msg_id, text)
     # Respond with the redacted text
-    say(f"Hello <@{user}>, you said: {text}. Redacted text: {text_redacted}. Stitched text: {stiched_text}")
+    #say(f"Hello <@{user}>, you said: {text}. Redacted text: {text_redacted}. Stitched text: {stiched_text}")
 
 
 
@@ -48,13 +48,22 @@ def slack_events():
         return jsonify({'challenge': data['challenge']})
     return handler.handle(request)
 
-def handle_redaction_event(text):
+def handle_redaction_event(channel_id, message_id, text):
     # Instantiate and use the PresidioTextRedactor class
-    redactor = PresidioTextRedactor(text)
-    text_redacted = redactor.redact()
-    print("text redacted", text_redacted)
-    stiched_text = ""
-    return text_redacted, stiched_text
+    url = REDACTOR_URL + "redact_text/" 
+    print("URL", url)
+    headers = {"Content-Type": "application/json"}
+    payload = {
+            "channel_id": channel_id,
+            "message_id": message_id,
+            "text": text
+            }
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()  # Raise an error for bad status codes
+    response_data = response.json()  # Parse JSON response
+    print(response_data)
+
+    return "", ""
     
 
 if __name__ == "__main__":
