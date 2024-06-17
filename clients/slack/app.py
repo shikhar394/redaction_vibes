@@ -36,9 +36,9 @@ def handle_message_events(event, say):
     #print(f"Message from {user} in channel {channel}: {text}")
     redact_response_data = handle_redaction_event(channel, message_id, text)
     load_pii_response_data = handle_load_pii(channel, message_id)
-    say(redacted_response_data["redacted_text"])
+    say(redact_response_data["redacted_text"])
     say("Here's the safe vault for your PII. To access this, please click this link")
-    #say(f"{redactor_url}/load_pii/{message_id}")
+    say(f"{REDACTOR_URL}load_pii/{message_id}")
     say("Please delete your last sent message..")
 
 @flask_app.route("/slack/events", methods=["POST"])
@@ -72,7 +72,7 @@ def handle_load_pii(channel_id, message_id):
     print("URL", url)
     headers = {"Content-Type": "application/json"}
     payload = {
-            "channel_id": channel_id,
+            #"channel_id": channel_id,
             "message_id": message_id,
             }
     response = requests.get(url, json=payload, headers=headers)
