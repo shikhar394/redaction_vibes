@@ -5,6 +5,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
+from markupsafe import escape
 
 
 
@@ -36,13 +37,10 @@ def redact_text():
         'redacted_tokens': redactor.redacted_tokens
     })
 
-@app.route('/load_pii/', methods=['POST'])
-def load_pii():
-    data = request.get_json()
-    message_id = data['message_id']
-    channel_id = data['channel_id']
+@app.route('/load_pii/<message_id>', methods=['GET'])
+def load_pii(message_id):
 
-    data, count = supabase.table('message_pii').select('pii_type').eq('message_id', message_id).eq('channel_id', channel_id).execute()
+    data, count = supabase.table('message_pii').select('pii_type').eq('message_id', escape(message_id)).execute()
 
     return jsonify({
         'data': data
