@@ -35,11 +35,15 @@ def handle_message_events(event, say):
     channel = event.get('channel')
     #print(f"Message from {user} in channel {channel}: {text}")
     redact_response_data = handle_redaction_event(channel, message_id, text)
-    load_pii_response_data = handle_load_pii(channel, message_id)
-    say(redact_response_data["redacted_text"])
-    say("Here's the safe vault for your PII. To access this, please click this link")
-    say(f"{REDACTOR_URL}load_pii/{message_id}")
-    say("Please delete your last sent message..")
+    if not redact_response_data["redacted_tokens"]: 
+        pass
+    else:
+        say(redact_response_data["redacted_text"])
+        say("Here's the safe vault for your PII. To access this, please click this link")
+        say(f"{REDACTOR_URL}load_pii/{message_id}")
+        say("Please delete your last sent message.")
+        #load_pii_response_data = handle_load_pii(channel, message_id)
+    
 
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
