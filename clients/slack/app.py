@@ -30,15 +30,16 @@ logging.basicConfig(level=logging.DEBUG)
 def handle_message_events(event, say):
     logging.debug(f"Event received: {event}")
     user = event.get('user')
-    client_msg_id = event.get('client_msg_id')
+    message_id = event.get('client_msg_id')
     text = event.get('text')
     channel = event.get('channel')
     #print(f"Message from {user} in channel {channel}: {text}")
-    text_redacted, stiched_text = handle_redaction_event(channel, client_msg_id, text)
-    # Respond with the redacted text
-    #say(f"Hello <@{user}>, you said: {text}. Redacted text: {text_redacted}. Stitched text: {stiched_text}")
-
-
+    redact_response_data = handle_redaction_event(channel, message_id, text)
+    load_pii_response_data = handle_load_pii(channel, message_id)
+    say(redacted_response_data["redacted_text"])
+    say("Here's the safe vault for your PII. To access this, please click this link")
+    #say(f"{redactor_url}/load_pii/{message_id}")
+    say("Please delete your last sent message..")
 
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
@@ -63,8 +64,21 @@ def handle_redaction_event(channel_id, message_id, text):
     response_data = response.json()  # Parse JSON response
     print(response_data)
 
-    return "", ""
-    
+    return response_data
+
+def handle_load_pii(channel_id, message_id):
+    url = REDACTOR_URL + f"load_pii/{message_id}"
+
+    print("URL", url)
+    headers = {"Content-Type": "application/json"}
+    payload = {
+            "channel_id": channel_id,
+            "message_id": message_id,
+            }
+    response = requests.get(url, json=payload, headers=headers)
+    response.raise_for_status()  # Raise an error for bad status codes
+    response_data = response.json()  # Parse JSON response
+    print(response_data)
 
 if __name__ == "__main__":
     #SocketModeHandler(app, config["SLACK_BOT_TOKEN"]).start()

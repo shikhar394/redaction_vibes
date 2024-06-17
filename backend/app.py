@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 from markupsafe import escape
 
-
-
 app = Flask(__name__)
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
@@ -20,6 +18,8 @@ def redact_text():
     text = data['text']
     message_id = data['message_id']
     channel_id = data['channel_id']
+
+    #breakpoint()
 
     redactor = PresidioTextRedactor(text)
     redacted_text = redactor.redact()
